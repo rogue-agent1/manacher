@@ -1,57 +1,56 @@
 #!/usr/bin/env python3
-"""Manacher's algorithm — find all palindromic substrings in O(n).
-
-One file. Zero deps. Does one thing well.
-
-Returns the longest palindromic substring and all palindrome radii.
-"""
+"""Manacher algorithm for longest palindromic substring."""
 import sys
 
 def manacher(s):
-    """Returns array P where P[i] = radius of palindrome centered at i in transformed string."""
     t = "#" + "#".join(s) + "#"
     n = len(t)
-    p = [0] * n
+    p = [0]*n
     c = r = 0
     for i in range(n):
-        mirror = 2 * c - i
+        mirror = 2*c - i
         if i < r:
             p[i] = min(r - i, p[mirror])
-        while i + p[i] + 1 < n and i - p[i] - 1 >= 0 and t[i + p[i] + 1] == t[i - p[i] - 1]:
+        while i + p[i] + 1 < n and i - p[i] - 1 >= 0 and t[i+p[i]+1] == t[i-p[i]-1]:
             p[i] += 1
         if i + p[i] > r:
             c, r = i, i + p[i]
-    return p, t
-
-def longest_palindrome(s):
-    if not s: return ""
-    p, t = manacher(s)
     max_len = max(p)
     center = p.index(max_len)
     start = (center - max_len) // 2
-    return s[start:start + max_len]
+    return s[start:start+max_len]
 
 def all_palindromes(s, min_len=2):
-    """Return all distinct palindromic substrings of length >= min_len."""
-    p, t = manacher(s)
-    pals = set()
-    for i in range(len(t)):
-        for r in range(1, p[i] + 1):
-            sub = t[i - r:i + r + 1].replace("#", "")
-            if len(sub) >= min_len:
-                pals.add(sub)
-    return sorted(pals, key=lambda x: (-len(x), x))
+    t = "#" + "#".join(s) + "#"
+    n = len(t)
+    p = [0]*n
+    c = r = 0
+    for i in range(n):
+        mirror = 2*c - i
+        if i < r: p[i] = min(r - i, p[mirror])
+        while i+p[i]+1 < n and i-p[i]-1 >= 0 and t[i+p[i]+1] == t[i-p[i]-1]:
+            p[i] += 1
+        if i + p[i] > r: c, r = i, i + p[i]
+    result = set()
+    for i in range(n):
+        if p[i] >= min_len:
+            start = (i - p[i]) // 2
+            length = p[i]
+            result.add(s[start:start+length])
+    return result
 
-def count_palindromic_substrings(s):
-    p, _ = manacher(s)
-    return sum((r + 1) // 2 for r in p)
-
-def main():
-    for s in ["babad", "cbbd", "abaaba", "racecar", "abacdfgdcaba"]:
-        lp = longest_palindrome(s)
-        count = count_palindromic_substrings(s)
-        pals = all_palindromes(s)
-        print(f"'{s}' → longest: '{lp}', count: {count}, all(≥2): {pals[:5]}{'...' if len(pals)>5 else ''}")
+def test():
+    assert manacher("babad") in ("bab", "aba")
+    assert manacher("cbbd") == "bb"
+    assert manacher("racecar") == "racecar"
+    assert manacher("a") == "a"
+    pals = all_palindromes("abacaba")
+    assert "abacaba" in pals
+    assert "aba" in pals
+    print("  manacher: ALL TESTS PASSED")
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == "test": test()
+    else:
+        s = sys.argv[2] if len(sys.argv) > 2 else "abaxyzzyxf"
+        print(f"Longest palindrome in '{s}': {manacher(s)}")
